@@ -1775,7 +1775,7 @@ Bool_t TClass::AddRule( const char *rule )
       cl = gInterpreter->GenerateTClass(ruleobj->GetTargetClass(), /* emulation = */ kTRUE, /*silent = */ kTRUE);
    }
    ROOT::TSchemaRuleSet* rset = cl->GetSchemaRules( kTRUE );
-
+   
    TString errmsg;
    if( !rset->AddRule( ruleobj, ROOT::TSchemaRuleSet::kCheckConflict, &errmsg ) ) {
       ::Warning( "TClass::AddRule", "The rule for class: \"%s\": version, \"%s\" and data members: \"%s\" has been skipped because it conflicts with one of the other rules (%s).",
@@ -1783,6 +1783,28 @@ Bool_t TClass::AddRule( const char *rule )
       delete ruleobj;
       return kFALSE;
    }
+ 
+   std::string wrapper, name;
+//   gCling->createUniqueName(name);
+/*  wrapper = Form("extern \"C\" void %s(char* target, TVirtualObject* oldObj) {\n %s \n };",
+                  name.c_str(), wrapper.c_str());
+   
+   typedef void ( *ptr )();
+   ptr = cling::runtime::gCling->compileFunction( name.c_str(), wrapper.c_str() ); 
+
+   if ( !ptr ) {
+      ::Error("", "Compilation error.");
+      gCling->unload(1);
+      rset->RemoveRule(ruleobj);    
+      delete ruleobj;
+      return kFALSE;   
+   }
+
+   if ( ruleobj->GetRuleType()==ROOT::TSchemaRuleSet::kReadRule ) 
+      ruleobj->SetReadFunctionPointer((ROOT::TSchemaRule::ReadFuncPtr_t)fp);
+   else if ( ruleobj->GetRuleType()==ROOT::TSchemaRuleSet::kReadRawRule ) 
+      ruleobj->SetReadRawFunctionPointer((ROOT::TSchemaRule::ReadRawFuncPtr_t)fp);
+*/
    return kTRUE;
 }
 

@@ -15,8 +15,6 @@
 #include "TROOT.h"
 #include "Riostream.h"
 
-#include "RConversionRuleParser.h"
-
 ClassImp(TSchemaRule)
 
 using namespace ROOT;
@@ -327,6 +325,13 @@ Bool_t TSchemaRule::SetFromRule( const char *rule )
       Error("SetFromRule","The rule (%s) is invalid: %s",rule,error_string.c_str());
       return kFALSE;
    }
+
+   return SetFromRule( rule_values );
+}
+
+//------------------------------------------------------------------------------
+Bool_t TSchemaRule::SetFromRule( MembersMap_t& rule_values ) 
+{
    ROOT::MembersMap_t ::const_iterator it1;
 
    it1 = rule_values.find( "type" );
@@ -362,12 +367,6 @@ Bool_t TSchemaRule::SetFromRule( const char *rule )
    if( it1 != rule_values.end() ) SetAttributes( it1->second );
    it1 = rule_values.find( "code" );
    if( it1 != rule_values.end() ) SetCode( it1->second );
-   // if (code is functioname) {
-   // switch (ruleobj->GetRuleType() ) {
-   // case kRead: SetReadFunctionPointer(  )
-   // case kReadRewa: SetReadRawFunctionPointer( )
-   // }
-
    return kTRUE;
 }
 

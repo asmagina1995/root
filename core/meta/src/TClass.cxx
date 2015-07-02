@@ -36,9 +36,9 @@
 //////////////////////////////////////////////////////////////////////////
 
 //*-*x7.5 macros/layout_class
-
 #include "TClass.h"
 
+#include "RConversionRuleParser.h"
 #include "Riostream.h"
 #include "TBaseClass.h"
 #include "TBrowser.h"
@@ -79,8 +79,6 @@
 #include "TSchemaRule.h"
 #include "TSystem.h"
 #include "TThreadSlots.h"
-
-#include "RConversionRuleParser.h"
 
 #include <cstdio>
 #include <cctype>
@@ -1763,9 +1761,8 @@ Bool_t TClass::AddRule( const char *rule )
    //   checksum : comma delimited list of the checksums of the class layout that this rule applies to.
    //   code={...} : code to be executed for the rule or name of the function implementing it.
 
-  
+   // Parse rule from string
    ROOT::MembersMap_t rule_values;
-
    std::string error_string;
    if( !ROOT::ParseRule( rule, rule_values, error_string ) ) {
       ::Error("SetFromRule","The rule (%s) is invalid: %s",rule,error_string.c_str());
@@ -1773,41 +1770,7 @@ Bool_t TClass::AddRule( const char *rule )
    }
    
    ROOT::TSchemaRule *ruleobj = new ROOT::TSchemaRule();
-   ROOT::MembersMap_t ::const_iterator it1;
-
-   it1 = rule_values.find( "type" );
-   if( it1 != rule_values.end() ) {
-      if (it1->second == "read" || it1->second == "Read") {
-         ruleobj->SetRuleType( ROOT::TSchemaRule::kReadRule );
-      } else if (it1->second == "readraw" || it1->second == "ReadRaw") {
-         ruleobj->SetRuleType( ROOT::TSchemaRule::kReadRawRule );
-      } else {
-         ruleobj->SetRuleType( ROOT::TSchemaRule::kNone );
-      }
-   } else {
-      // Default to read.
-      ruleobj->SetRuleType( ROOT::TSchemaRule::kReadRule );
-   }
-   it1 = rule_values.find( "targetClass" );
-   if( it1 != rule_values.end() ) ruleobj->SetTargetClass( it1->second );
-   it1 = rule_values.find( "sourceClass" );
-   if( it1 != rule_values.end() ) ruleobj->SetSourceClass( it1->second );
-   it1 = rule_values.find( "target" );
-   if( it1 != rule_values.end() ) ruleobj->SetTarget( it1->second );
-   it1 = rule_values.find( "source" );
-   if( it1 != rule_values.end() ) ruleobj->SetSource( it1->second );
-   it1 = rule_values.find( "version" );
-   if( it1 != rule_values.end() ) ruleobj->SetVersion( it1->second );
-   it1 = rule_values.find( "checksum" );
-   if( it1 != rule_values.end() ) ruleobj->SetChecksum( it1->second );
-   it1 = rule_values.find( "embed" );
-   if( it1 != rule_values.end() ) ruleobj->SetEmbed( it1->second == "false" ? false : true );
-   it1 = rule_values.find( "include" );
-   if( it1 != rule_values.end() ) ruleobj->SetInclude( it1->second );
-   it1 = rule_values.find( "attributes" );
-   if( it1 != rule_values.end() ) ruleobj->SetAttributes( it1->second );
-   it1 = rule_values.find( "code" );
-   if( it1 != rule_values.end() ) ruleobj->SetCode( it1->second );
+   ruleobj->SetFromRule(rule_values);
 
    R__LOCKGUARD(gInterpreterMutex);
 
@@ -1838,28 +1801,35 @@ Bool_t TClass::AddRule( const char *rule )
          type_map[ ((TObjString*)obj)->String().Data() ] = ROOT::TSchemaType( dm->GetTypeName(), dim.c_str() );
       }
    }
-   
+
+   std::string name = Form( "%s_%s_%d", rule_values["type"].c_str(), 
+                            rule_values["targetClass"].c_str(), rset->GetRules()->GetEntries() );
    std::ostringstream wrapper;
    if ( ruleobj->GetRuleType()==ROOT::TSchemaRule::kReadRule ) 
       ROOT::WriteReadRawRuleFunc(rule_values, rset->GetRules()->GetEntries(), rule_values["targetClass"], type_map, wrapper );
+   
    else if ( ruleobj->GetRuleType()==ROOT::TSchemaRule::kReadRawRule ) 
       ROOT::WriteReadRuleFunc(rule_values, rset->GetRules()->GetEntries(), rule_values["targetClass"], type_map, wrapper );
 
-//   ptr = cling::runtime::gCling->compileFunction( Form("", rule_values["type"]), wrapper.c_str() ); 
+//   void *address = 0 ;
+//   CallFunc_t *func = gInterpreter->CallFunc_Factory();
+//   gInterpreter->CallFunc_SetFuncProto(func, socket->IsA()->GetClassInfo(), "Close", "", &other_of)
+//   gInterpreter->CallFunc_Exec( func, address );  
+
 /*   
-   void (*ptr)() = 0;
-   if ( !ptr ) {
+   if ( !address ) {
       ::Error( "TClass::AddRule", "The rule for class: \"%s\": version, \"%s\" and data members: \"%s\" has been skipped because it cannot be compiled (%s).",
                 ruleobj->GetTargetClass(), ruleobj->GetVersion(), ruleobj->GetTargetString(), errmsg.Data() );
+      gInterpreter->CallFunc_Delete( func );
       rset->RemoveRule( ruleobj );    
       delete ruleobj;
       return kFALSE;   
    }
 
    if ( ruleobj->GetRuleType()==ROOT::TSchemaRule::kReadRule ) 
-      ruleobj->SetReadFunctionPointer( (ROOT::TSchemaRule::ReadFuncPtr_t)ptr) ;
+      ruleobj->SetReadFunctionPointer( (ROOT::TSchemaRule::ReadFuncPtr_t)address ) ;
    else if ( ruleobj->GetRuleType()==ROOT::TSchemaRule::kReadRawRule ) 
-      ruleobj->SetReadRawFunctionPointer( (ROOT::TSchemaRule::ReadRawFuncPtr_t)ptr );
+      ruleobj->SetReadRawFunctionPointer( (ROOT::TSchemaRule::ReadRawFuncPtr_t)address );
 */
    return kTRUE;
 }

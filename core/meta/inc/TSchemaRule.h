@@ -10,6 +10,7 @@ class TObjArray;
 
 #include "TObject.h"
 #include "TNamed.h"
+#include "RConversionRuleParser.h"
 #include "Rtypes.h"
 #include "TString.h"
 
@@ -17,7 +18,7 @@ class TObjArray;
 #include <utility>
 
 namespace ROOT {
-
+ 
    class TSchemaRule: public TObject
    {
       public:
@@ -52,6 +53,7 @@ namespace ROOT {
 
          void             Clear(Option_t * /*option*/ ="");
          Bool_t           SetFromRule( const char *rule );
+         Bool_t           SetFromRule( MembersMap_t& rule_values );
 
          const char      *GetVersion( ) const;
          Bool_t           SetVersion( const TString& version );

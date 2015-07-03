@@ -3409,7 +3409,7 @@ void TFile::ReadStreamerInfo()
                   TObjLink *rulelnk = listOfRules->FirstLink();
                   while (rulelnk) {
                      TObjString *rule = (TObjString*)rulelnk->GetObject();
-                     TClass::AddRule( rule->String().Data() );
+                     TClass::AddRule( rule->String().Data(), /* emulation = */ kFALSE );
                      rulelnk = rulelnk->Next();
                   }
                } else {

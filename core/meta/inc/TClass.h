@@ -349,7 +349,7 @@ public:
 
    void               AddInstance(Bool_t heap = kFALSE) { fInstanceCount++; if (heap) fOnHeap++; }
    void               AddImplFile(const char *filename, int line);
-   static Bool_t      AddRule(const char *rule);
+   static Bool_t      AddRule(const char *rule, Bool_t emulation = kTRUE);
    static Int_t       ReadRules(const char *filename);
    static Int_t       ReadRules();
    void               AdoptSchemaRules( ROOT::TSchemaRuleSet *rules );

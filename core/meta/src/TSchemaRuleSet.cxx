@@ -3,6 +3,7 @@
 
 #include "TSchemaRuleSet.h"
 #include "TSchemaRule.h"
+#include "TMap.h"
 #include "TObjArray.h"
 #include "TObjString.h"
 #include "TClass.h"
@@ -30,6 +31,9 @@ TSchemaRuleSet::TSchemaRuleSet(): fPersistentRules( 0 ), fRemainingRules( 0 ),
    fRemainingRules  = new TObjArray();
    fAllRules        = new TObjArray();
    fAllRules->SetOwner( kTRUE );
+
+   fMappedRules     = new TMap();
+   fMappedRules->SetOwner( kTRUE );
 }
 
 //------------------------------------------------------------------------------
@@ -40,6 +44,7 @@ TSchemaRuleSet::~TSchemaRuleSet()
    delete fPersistentRules;
    delete fRemainingRules;
    delete fAllRules;
+   delete fMappedRules;
 }
 
 //------------------------------------------------------------------------------
@@ -110,7 +115,7 @@ Bool_t TSchemaRuleSet::AddRule( TSchemaRule* rule, EConsistencyCheck checkConsis
      R__LOCKGUARD2(gInterpreterMutex);
      streamerInfosTest = (fClass->GetStreamerInfos()==0 || fClass->GetStreamerInfos()->GetEntries()==0);
    }
-   if( rule->GetTarget()  && !(fClass->TestBit(TClass::kIsEmulation) && streamerInfosTest) ) {
+   if( rule->GetTarget() && !(fClass->TestBit(TClass::kIsEmulation)) && streamerInfosTest ) {
       TObjArrayIter titer( rule->GetTarget() );
       while( (obj = titer.Next()) ) {
          TObjString* str = (TObjString*)obj;
@@ -132,38 +137,56 @@ Bool_t TSchemaRuleSet::AddRule( TSchemaRule* rule, EConsistencyCheck checkConsis
    //---------------------------------------------------------------------------
    // Check if there is a rule conflicting with this one
    //---------------------------------------------------------------------------
-   const TObjArray* rules = FindRules( rule->GetSourceClass() );
-   TObjArrayIter it( rules );
+   TObjArray *keys               = new TObjArray();
+   TSchemaRule::TValue *value    = new TSchemaRule::TValue();
+   TSchemaRule::TValue *value_ex = new TSchemaRule::TValue();
+   rule->GenerateKeys( keys, value );
    TSchemaRule *r;
+   
+   TObjArrayIter it_key( keys );
+   std::vector<std::pair<Int_t, Int_t> >::iterator it_value;
+   std::vector<std::pair<Int_t, Int_t> >::iterator it_value_ex;
 
-   while( (obj = it.Next()) ) {
-      r = (TSchemaRule *) obj;
-      if( rule->Conflicts( r ) ) {
-         delete rules;
-         if ( *r == *rule) {
-            // The rules are duplicate from each other,
-            // just ignore the new ones.
-            if (errmsg) {
-               *errmsg = "it conflicts with one of the other rules";
+   while ( (obj = it_key.Next()) ) {
+      if ( ! (value_ex = (TSchemaRule::TValue*) fMappedRules->FindObject( obj )) ) 
+         continue;
+
+      for ( it_value_ex = value_ex->GetVersionVect()->begin(); it_value_ex != value_ex->GetVersionVect()->end(); ++it_value_ex ) {
+         for ( it_value = value->GetVersionVect()->begin(); it_value != value->GetVersionVect()->end(); ++it_value ) {
+            if ( ((it_value->first >= it_value_ex->first) && (it_value->first <= it_value_ex->second)) || 
+                 ((it_value->first <= it_value_ex->first) && (it_value->second <= it_value_ex->first))) 
+            {
+               r = value->GetRule();
+               if ( *r == *rule ) {
+                  // The rules are duplicate from each other,
+                  // just ignore the new ones.
+                  if (errmsg) {
+                     *errmsg = "it conflicts with one of the other rules";
+                  }
+               }
+               if (errmsg) {
+                  *errmsg = "The existing rule is:\n   ";
+                  r->AsString(*errmsg,"s");
+                  *errmsg += "\nand the ignored rule is:\n   ";
+                  rule->AsString(*errmsg);
+                  *errmsg += ".\n";
+               }
+               delete keys;
+               delete value;
+               delete rule;
+               return kFALSE;
             }
-            delete rule;
-            return kTRUE;
          }
-         if (errmsg) {
-            *errmsg = "The existing rule is:\n   ";
-            r->AsString(*errmsg,"s");
-            *errmsg += "\nand the ignored rule is:\n   ";
-            rule->AsString(*errmsg);
-            *errmsg += ".\n";
-         }
-         return kFALSE;
       }
    }
-   delete rules;
 
    //---------------------------------------------------------------------------
    // No conflicts - insert the rules
    //---------------------------------------------------------------------------
+   it_key.Reset();
+   while ( (obj = it_key.Next()) ) 
+      fMappedRules->Add( obj, value );
+
    if( rule->GetEmbed() )
       fPersistentRules->Add( rule );
    else

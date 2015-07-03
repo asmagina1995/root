@@ -6,6 +6,7 @@
 
 class TClass;
 
+#include "TMap.h"
 #include "TObject.h"
 #include "TObjArray.h"
 #include "Rtypes.h"
@@ -63,6 +64,7 @@ namespace ROOT {
          ClassDef( TSchemaRuleSet, 1 )
 
       private:
+
          TObjArray*                             fPersistentRules; //  Array of the rules that will be embeded in the file
          TObjArray*                             fRemainingRules;  //! Array of non-persisten rules - just for cleanup purposes - owns the elements
          TObjArray*                             fAllRules;        //! Array of all rules
@@ -70,6 +72,8 @@ namespace ROOT {
          TString                                fClassName;       //  Target class name
          Int_t                                  fVersion;         //  Target class version
          UInt_t                                 fCheckSum;        //  Target class checksum
+
+         TMap*                                  fMappedRules;     //  Map used for quick lookup of rules 
    };
 
 } // End of Namespace ROOT

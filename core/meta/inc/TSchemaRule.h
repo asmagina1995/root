@@ -32,6 +32,42 @@ namespace ROOT {
 
             ClassDef(TSources,2);
          };
+      
+         class TKey : public TObject {
+         private:
+            TString *fSourceClass;
+            TString *fTarget;
+         public:
+            TKey(TString *source = 0, TString *target = 0) : fSourceClass(source), fTarget(target) {}
+            TString     *GetSourceClass() const { return fSourceClass; }
+            TString     *GetTarget() const      { return fTarget; }
+
+            Bool_t IsEqual( const TObject* obj ) const 
+            {
+               const TKey* key = (const TKey*)obj;
+               return  *fSourceClass == *(key->fSourceClass) && *fTarget == *(key->fTarget);
+            }
+
+            ClassDef(TKey, 1);  
+         };
+
+         class TValue : public TObject {
+         private:
+            TSchemaRule                            *fRule;
+            std::vector<std::pair<Int_t, Int_t> >  *fVersionVect;
+
+         public:
+            TValue(TSchemaRule *rule = 0, std::vector<std::pair<Int_t, Int_t> > *ver = 0) 
+               : fRule(rule), fVersionVect(ver) {}
+
+            TSchemaRule *GetRule() const  { return fRule; }
+            std::vector<std::pair<Int_t, Int_t> > *GetVersionVect() const { return fVersionVect; }
+            
+            void SetRule( TSchemaRule* rule ) { fRule = rule; }
+            void SetVersionVect( std::vector<std::pair<Int_t, Int_t> >* ver ) { fVersionVect = ver; }
+
+            ClassDef(TValue, 1);
+         };
 
          typedef enum
          {
@@ -94,6 +130,8 @@ namespace ROOT {
          void             AsString( TString &out, const char *options = "" ) const;
          void             ls(Option_t *option="") const;
 
+         void             GenerateKeys(TObjArray* keys, TValue* value);
+
          ClassDef( TSchemaRule, 1 );
 
       private:
@@ -122,6 +160,7 @@ namespace ROOT {
          RuleType_t                   fRuleType;       //  Type of the rule
          TString                      fAttributes;     //  Attributes to be applied to the member (like Owner/NotOwner)
    };
+
 } // End of namespace ROOT
 
 #endif // ROOT_TSchemaRule

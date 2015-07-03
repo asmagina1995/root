@@ -35,6 +35,8 @@
 #pragma link C++ class ROOT::TSchemaMatch+;
 #pragma link C++ class ROOT::TSchemaRule+;
 #pragma link C++ class ROOT::TSchemaRule::TSources+;
+#pragma link C++ class ROOT::TSchemaRule::TKey+;
+#pragma link C++ class ROOT::TSchemaRule::TValue+;
 #pragma link C++ class ROOT::TSchemaRuleSet-;
 #pragma link C++ class TGlobal;
 #pragma link C++ class TMethod;

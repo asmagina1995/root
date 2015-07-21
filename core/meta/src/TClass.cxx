@@ -100,9 +100,6 @@
 #include "TViewPubDataMembers.h"
 #include "TViewPubFunctions.h"
 
-//#include "TCling.h"
-//#include "cling/Interpreter/Interpreter.h"
-
 using namespace std;
 
 // Mutex to protect CINT and META operations
@@ -1782,7 +1779,7 @@ Bool_t TClass::AddRule( const char *rule, Bool_t emulation )
    TClass *cl = TClass::GetClass( ruleobj->GetTargetClass() );
    if ( !cl ) {
       if ( emulation ) {
-//         // Create an empty emulated class for now.
+         // Create an empty emulated class for now.
          cl = gInterpreter->GenerateTClass(ruleobj->GetTargetClass(), /* emulation = */ kTRUE, /*silent = */ kTRUE);
       }
       else {
@@ -1809,12 +1806,11 @@ Bool_t TClass::AddRule( const char *rule, Bool_t emulation )
 
    // Extract target class members type map
    ROOT::MembersTypeMap_t type_map;
-   TObjArrayIter it(ruleobj->GetTarget());
+   TObjArrayIter it1(ruleobj->GetTarget());
    TObject* obj;
    TDataMember* dm;
    std::string array_dim;
-
-   while ( (obj = it.Next()) ) {
+   while ( (obj = it1.Next()) ) {
       dm = cl->GetDataMember( ((TObjString*)obj)->String().Data() );
       array_dim = dm->GetArrayDim() > 0 ? Form( "[%d]", dm->GetArrayDim() ) : "";
       type_map[ ((TObjString*)obj)->String().Data() ] = ROOT::TSchemaType( dm->GetTypeName(), array_dim.c_str() );
@@ -1829,22 +1825,19 @@ Bool_t TClass::AddRule( const char *rule, Bool_t emulation )
       ROOT::WriteReadRuleFunc(rule_values, rset->GetRules()->GetEntries(), rule_values["targetClass"], type_map, wrapper );
 
    // Compile wrapper function
-   std::string name = Form( "%s_%s_%d", rule_values["type"].c_str(), 
-                            rule_values["targetClass"].c_str(), rset->GetRules()->GetEntries() );
-   void *address = 0;
-//   void *address = ((TCling*)gInterpreter)->GetInterpreter()->compileFunction( name.c_str(),
-//                                                                               wrapper.str().c_str(), true, true );
+   TObjArrayIter it2(ruleobj->GetInclude());
+   while ( (obj = it2.Next()) )
+      gInterpreter->ProcessLine( Form("#include %s", ((TObjString*)obj)->String().Data()) );
 
-   if ( !address ) {
+   if ( gInterpreter->Declare(wrapper.str().c_str()) ) {
       ::Error( "TClass::AddRule", "The rule for class: \"%s\", version \"%s\" and data members \"%s\" has been skipped because it cannot be compiled (%s).",
                 ruleobj->GetTargetClass(), ruleobj->GetVersion(), ruleobj->GetTargetString(), errmsg.Data() );
-//      ((TCling*)gInterpreter)->GetInterpreter()->unload(1);
       rset->RemoveRule( ruleobj );    
-//      delete ruleobj;
       return kFALSE;   
    }
 
    // Set pointer to wrapper function
+   void *address = gInterpreter->GetInterfaceMethod(0, rule_values["funcname"].c_str(), "0, 0");
    if ( ruleobj->GetRuleType()==ROOT::TSchemaRule::kReadRule ) 
       ruleobj->SetReadFunctionPointer( (ROOT::TSchemaRule::ReadFuncPtr_t)address ) ;
    else if ( ruleobj->GetRuleType()==ROOT::TSchemaRule::kReadRawRule ) 

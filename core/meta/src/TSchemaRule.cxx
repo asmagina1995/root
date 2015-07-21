@@ -957,18 +957,6 @@ void TSchemaRule::ProcessDeclaration( TObjArray* array, const TString& list )
    }
 }
 
-//------------------------------------------------------------------------------
-void TSchemaRule::GenerateKeys( TObjArray* keys, TValue* value ) 
-{
-   TObjArrayIter it1( fTargetVect );
-   TObject* obj;
-   while ( (obj = it1.Next()) ) 
-      keys->Add( new TKey(&(((TObjString*)obj)->String()), &fSourceClass) );
-
-   value->SetRule(this);
-   value->SetVersionVect(fVersionVect);
-}       
-
 #if 0
 //------------------------------------------------------------------------------
 Bool_t TSchemaRule::GenerateFor( TStreamerInfo *info )

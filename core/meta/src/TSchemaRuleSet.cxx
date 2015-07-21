@@ -138,55 +138,51 @@ Bool_t TSchemaRuleSet::AddRule( TSchemaRule* rule, EConsistencyCheck checkConsis
    //---------------------------------------------------------------------------
    // Check if there is a rule conflicting with this one
    //---------------------------------------------------------------------------
-   TObjArray *keys               = new TObjArray();
-   TSchemaRule::TValue *value    = new TSchemaRule::TValue();
-   TSchemaRule::TValue *value_ex = new TSchemaRule::TValue();
-   rule->GenerateKeys( keys, value );
+   TObjArrayIter it( rule->GetTarget() );
    TSchemaRule *r;
-   
-   TObjArrayIter it_key( keys );
-   std::vector<std::pair<Int_t, Int_t> >::iterator it_value;
-   std::vector<std::pair<Int_t, Int_t> >::iterator it_value_ex;
+   TSchemaRule::TKey* key = new TSchemaRule::TKey( rule->GetSourceClass(), " " );
+   TSchemaRule::TValue *val;
+   std::vector<std::pair<Int_t, Int_t> >::const_iterator itver;
 
-   while ( (obj = it_key.Next()) ) {
-      if ( ! (value_ex = (TSchemaRule::TValue*) fMappedRules->FindObject( obj )) ) 
+   while ( (obj = it.Next()) ) {
+      if ( !(val = (TSchemaRule::TValue*) fMappedRules->FindObject(key)) ) 
          continue;
 
-      for ( it_value_ex = value_ex->GetVersionVect()->begin(); it_value_ex != value_ex->GetVersionVect()->end(); ++it_value_ex ) {
-         for ( it_value = value->GetVersionVect()->begin(); it_value != value->GetVersionVect()->end(); ++it_value ) {
-            if ( ((it_value->first >= it_value_ex->first) && (it_value->first <= it_value_ex->second)) || 
-                 ((it_value->first <= it_value_ex->first) && (it_value->second <= it_value_ex->first))) 
-            {
-               r = value->GetRule();
-               if ( *r == *rule ) {
-                  // The rules are duplicate from each other,
-                  // just ignore the new ones.
-                  if (errmsg) {
-                     *errmsg = "it conflicts with one of the other rules";
-                  }
-               }
-               if (errmsg) {
-                  *errmsg = "The existing rule is:\n   ";
-                  r->AsString(*errmsg,"s");
-                  *errmsg += "\nand the ignored rule is:\n   ";
-                  rule->AsString(*errmsg);
-                  *errmsg += ".\n";
-               }
-               delete keys;
-               delete value;
-               delete rule;
-               return kFALSE;
+      for ( itver = rule->GetVersion()->begin(); itver != rule->GetVersion()->end(); ++itver ) {
+         if ( !(r = val->CheckVersion(*itver)) )
+            continue;
+         if ( *r == *rule ) {
+            // The rules are duplicate from each other,
+            // just ignore the new ones.
+            if (errmsg) {
+               *errmsg = "it conflicts with one of the other rules";
             }
+            delete key;
+            return kTRUE; 
          }
+         if (errmsg) {
+            *errmsg = "The existing rule is:\n   ";
+            r->AsString(*errmsg,"s");
+            *errmsg += "\nand the ignored rule is:\n   ";
+            rule->AsString(*errmsg);
+            *errmsg += ".\n";
+         }
+         delete key;
+         return kFALSE;
       }
    }
 
    //---------------------------------------------------------------------------
    // No conflicts - insert the rules
    //---------------------------------------------------------------------------
-   it_key.Reset();
-   while ( (obj = it_key.Next()) ) 
-      fMappedRules->Add( obj, value );
+   it.Reset();
+   while ( (obj = it.Next()) ) { 
+      if ( (val = (TSchemaRule::TValue*) fMappedRules->FindObject(key)) ) 
+         fMappedRules->Add( key, new TSchemaRule::TValue(rule) );
+      else 
+         val->Add( rule );
+   }
+   delete key;
 
    if( rule->GetEmbed() )
       fPersistentRules->Add( rule );

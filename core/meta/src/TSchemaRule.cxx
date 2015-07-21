@@ -383,13 +383,24 @@ Bool_t TSchemaRule::SetVersion( const TString& version )
 }
 
 //------------------------------------------------------------------------------
-const char *TSchemaRule::GetVersion() const
+const std::vector<std::pair<Int_t, Int_t> >* TSchemaRule::GetVersion() const
+{
+   if( fVersion == "" )
+      return 0;
+
+   if( !fVersionVect )
+      ProcessVersion( fVersion ); // At this point the version string should always be correct
+
+   return fVersionVect;
+}
+
+//------------------------------------------------------------------------------
+const char *TSchemaRule::GetVersionString() const
 {
    // Get the version string.
 
    return fVersion;
 }
-
 
 //------------------------------------------------------------------------------
 Bool_t TSchemaRule::TestVersion( Int_t version ) const

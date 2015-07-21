@@ -1796,7 +1796,7 @@ Bool_t TClass::AddRule( const char *rule, Bool_t emulation )
    TString errmsg;
    if( !rset->AddRule( ruleobj, ROOT::TSchemaRuleSet::kCheckConflict, &errmsg ) ) {
       ::Warning( "TClass::AddRule", "The rule for class: \"%s\": version \"%s\" and data members: \"%s\" has been skipped because it conflicts with one of the other rules (%s).",
-                ruleobj->GetTargetClass(), ruleobj->GetVersion(), ruleobj->GetTargetString(), errmsg.Data() );
+                ruleobj->GetTargetClass(), ruleobj->GetVersionString(), ruleobj->GetTargetString(), errmsg.Data() );
       delete ruleobj;
       return kFALSE;
    }
@@ -1831,7 +1831,7 @@ Bool_t TClass::AddRule( const char *rule, Bool_t emulation )
 
    if ( gInterpreter->Declare(wrapper.str().c_str()) ) {
       ::Error( "TClass::AddRule", "The rule for class: \"%s\", version \"%s\" and data members \"%s\" has been skipped because it cannot be compiled (%s).",
-                ruleobj->GetTargetClass(), ruleobj->GetVersion(), ruleobj->GetTargetString(), errmsg.Data() );
+                ruleobj->GetTargetClass(), ruleobj->GetVersionString(), ruleobj->GetTargetString(), errmsg.Data() );
       rset->RemoveRule( ruleobj );    
       return kFALSE;   
    }

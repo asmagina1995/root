@@ -91,7 +91,8 @@ namespace ROOT {
          Bool_t           SetFromRule( const char *rule );
          Bool_t           SetFromRule( MembersMap_t& rule_values );
 
-         const char      *GetVersion( ) const;
+         const std::vector<std::pair<Int_t, Int_t> >* GetVersion() const;
+         const char      *GetVersionString( ) const;
          Bool_t           SetVersion( const TString& version );
          Bool_t           TestVersion( Int_t version ) const;
          Bool_t           SetChecksum( const TString& checksum );

@@ -177,7 +177,7 @@ Bool_t TSchemaRuleSet::AddRule( TSchemaRule* rule, EConsistencyCheck checkConsis
    //---------------------------------------------------------------------------
    it.Reset();
    while ( (obj = it.Next()) ) { 
-      if ( (val = (TSchemaRule::TValue*) fMappedRules->FindObject(key)) ) 
+      if ( !(val = (TSchemaRule::TValue*) fMappedRules->FindObject(key)) ) 
          fMappedRules->Add( key, new TSchemaRule::TValue(rule) );
       else 
          val->Add( rule );

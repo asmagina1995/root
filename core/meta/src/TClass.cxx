@@ -1794,8 +1794,8 @@ Bool_t TClass::AddRule( const char *rule, Bool_t emulation )
    ROOT::TSchemaRuleSet* rset = cl->GetSchemaRules( kTRUE );
 
    TString errmsg;
-   if( !rset->AddRule( ruleobj, ROOT::TSchemaRuleSet::kCheckConflict, &errmsg ) ) {
-      ::Warning( "TClass::AddRule", "The rule for class: \"%s\": version \"%s\" and data members: \"%s\" has been skipped because it conflicts with one of the other rules (%s).",
+   if( !rset->AddRule( ruleobj, ROOT::TSchemaRuleSet::kCheckAll, &errmsg ) ) {
+      ::Warning( "TClass::AddRule", "The rule for class: \"%s\": version \"%s\" and data members: \"%s\" has been skipped (%s).",
                 ruleobj->GetTargetClass(), ruleobj->GetVersionString(), ruleobj->GetTargetString(), errmsg.Data() );
       delete ruleobj;
       return kFALSE;

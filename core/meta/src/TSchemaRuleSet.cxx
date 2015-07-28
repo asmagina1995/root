@@ -19,6 +19,8 @@
 
 ClassImp(TSchemaRule)
 
+#include <iostream>
+
 using namespace ROOT;
 
 //------------------------------------------------------------------------------
@@ -116,7 +118,7 @@ Bool_t TSchemaRuleSet::AddRule( TSchemaRule* rule, EConsistencyCheck checkConsis
      streamerInfosTest = (fClass->GetStreamerInfos()==0 || fClass->GetStreamerInfos()->GetEntries()==0);
    }
    
-   if( rule->GetTarget() && !(fClass->TestBit(TClass::kIsEmulation)) && fClass->GetStreamerInfo() ) {
+   if( rule->GetTarget() && !(fClass->TestBit(TClass::kIsEmulation) && streamerInfosTest) ) {
       TObjArrayIter titer( rule->GetTarget() );
       while( (obj = titer.Next()) ) {
          TObjString* str = (TObjString*)obj;

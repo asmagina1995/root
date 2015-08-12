@@ -100,6 +100,8 @@
 #include "TViewPubDataMembers.h"
 #include "TViewPubFunctions.h"
 
+#include <iostream>
+
 using namespace std;
 
 // Mutex to protect CINT and META operations
@@ -1795,8 +1797,8 @@ Bool_t TClass::AddRule( const char *rule, Bool_t emulation )
 
    TString errmsg;
    if( !rset->AddRule( ruleobj, ROOT::TSchemaRuleSet::kCheckAll, &errmsg ) ) {
-      ::Warning( "TClass::AddRule", "The rule for class: \"%s\": version \"%s\" and data members: \"%s\" has been skipped (%s).",
-                ruleobj->GetTargetClass(), ruleobj->GetVersionString(), ruleobj->GetTargetString(), errmsg.Data() );
+      ::Error("TClass::AddRule", "The rule for class: \"%s\": version \"%s\" and data members: \"%s\" has been skipped (%s).",
+               ruleobj->GetTargetClass(), ruleobj->GetVersionString(), ruleobj->GetTargetString(), errmsg.Data() );
       delete ruleobj;
       return kFALSE;
    }
@@ -1819,25 +1821,26 @@ Bool_t TClass::AddRule( const char *rule, Bool_t emulation )
    // Create wrapper for a rule
    std::ostringstream wrapper;
    if ( ruleobj->GetRuleType()==ROOT::TSchemaRule::kReadRule ) 
-      ROOT::WriteReadRawRuleFunc(rule_values, rset->GetRules()->GetEntries(), rule_values["targetClass"], type_map, wrapper );
-   
+      ROOT::WriteReadRuleFunc(rule_values, rset->GetRules()->GetEntries(), rule_values["targetClass"], type_map, wrapper );
    else if ( ruleobj->GetRuleType()==ROOT::TSchemaRule::kReadRawRule ) 
       ROOT::WriteReadRuleFunc(rule_values, rset->GetRules()->GetEntries(), rule_values["targetClass"], type_map, wrapper );
 
    // Compile wrapper function
-   TObjArrayIter it2(ruleobj->GetInclude());
-   while ( (obj = it2.Next()) )
-      gInterpreter->ProcessLine( Form("#include %s", ((TObjString*)obj)->String().Data()) );
+   if ( ruleobj->GetInclude() ) {
+      TObjArrayIter it2(ruleobj->GetInclude());
+      while ( (obj = it2.Next()) )
+         gInterpreter->ProcessLine( Form("#include %s", ((TObjString*)obj)->String().Data()) );
+   }
 
-   if ( gInterpreter->Declare(wrapper.str().c_str()) ) {
-      ::Error( "TClass::AddRule", "The rule for class: \"%s\", version \"%s\" and data members \"%s\" has been skipped because it cannot be compiled (%s).",
-                ruleobj->GetTargetClass(), ruleobj->GetVersionString(), ruleobj->GetTargetString(), errmsg.Data() );
+   if ( !gInterpreter->Declare(wrapper.str().c_str()) ) {
+      ::Error( "TClass::AddRule", "The rule for class: \"%s\", version \"%s\" and data members \"%s\" has been skipped because it cannot be compiled.",
+                ruleobj->GetTargetClass(), ruleobj->GetVersionString(), ruleobj->GetTargetString() );
       rset->RemoveRule( ruleobj );    
       return kFALSE;   
    }
 
    // Set pointer to wrapper function
-   void *address = gInterpreter->GetInterfaceMethod(0, rule_values["funcname"].c_str(), "0, 0");
+   void *address = gInterpreter->GetInterfaceMethod(0, rule_values["funcname"].c_str(), "0, 0"); // incorrect ptr??
    if ( ruleobj->GetRuleType()==ROOT::TSchemaRule::kReadRule ) 
       ruleobj->SetReadFunctionPointer( (ROOT::TSchemaRule::ReadFuncPtr_t)address ) ;
    else if ( ruleobj->GetRuleType()==ROOT::TSchemaRule::kReadRawRule ) 

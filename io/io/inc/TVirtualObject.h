@@ -26,9 +26,15 @@
 #include "TClassRef.h"
 #endif
 
+#ifndef ROOT_TDictionary
+#include "TDictionary.h"
+#endif
+
+#include <map>
 
 class TVirtualObject {
 private:
+   std::map<Int_t, TDictionary::DeclId_t> fIds;
 
    TVirtualObject(const TVirtualObject&);             // not implemented
    TVirtualObject &operator=(const TVirtualObject&);  // not implemented
@@ -40,10 +46,17 @@ public:
    TVirtualObject(TClass *cl) : fClass(cl), fObject(cl ? cl->New() : 0) { }
    ~TVirtualObject() { if (fClass) fClass->Destructor(fObject); }
 
-
-   TClass *GetClass() const { return fClass; }
-   void   *GetObject() const { return fObject; }
-
+   TClass  *GetClass() const { return fClass; }
+   void    *GetObject() const { return fObject; }
+   
+   Bool_t                  IsCollection() const;
+   Int_t                   GetSize() const;
+   TVirtualObject         *At(Int_t i) const;
+   TVirtualObject         *GetMember(Int_t id) const;
+   template<typename T> T  GetMember(Int_t id) const;
+   UInt_t                  GetId(TString name);
+   Bool_t                  Load(void *address);
+   Int_t                   GetClassVersion() const;
 };
 
 #endif // ROOT_TVirtualObject

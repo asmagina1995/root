@@ -453,7 +453,6 @@ namespace ROOT
          // this is done if the type was declared
          //--------------------------------------------------------------------
          Bool_t generateOnFile = false;
-         output << "#if 0" << std::endl; // this is to be removed later
          for( it = source.begin(); it != source.end(); ++it ) {
             output << "      ";
             output << "static Int_t id_" << it->second << " = oldObj->GetId(";
@@ -462,7 +461,6 @@ namespace ROOT
             if( it->first.fType != "" )
                generateOnFile = true;
          }
-         output << "#endif" << std::endl; // this is to be removed later
 
          //--------------------------------------------------------------------
          // Declare the on-file structure - if needed
@@ -883,6 +881,4 @@ namespace ROOT
       else
          it->second.push_back( rule );
    }
-
-
 }

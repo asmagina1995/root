@@ -7,12 +7,10 @@
 
 ClassImp(TVirtualObject)
 
-// проверки на fClass != 0 !!!!
-
 //______________________________________________________________________________
 Bool_t TVirtualObject::IsCollection() const
 {
-   return kTRUE;
+   return fClass->GetCollectionProxy();
 }
 
 //______________________________________________________________________________
@@ -36,7 +34,8 @@ TVirtualObject *TVirtualObject::GetMember(Int_t id) const
 {
    std::map<Int_t, TDictionary::DeclId_t>::const_iterator it = fIds.find(id);
    if (it == fIds.end()) {
-      ::Error("TVirtualObject::GetMember", "Cannot find data member with id %s for class %s.", id, GetClass()->GetName());
+      ::Error("TVirtualObject::GetMember", "Cannot find data member with id %d for class %s.", 
+              id, GetClass()->GetName());
       return 0;
    }
    TListOfDataMembers* list = (TListOfDataMembers*)(GetClass()->GetListOfDataMembers());
@@ -50,7 +49,8 @@ T TVirtualObject::GetMember(Int_t id) const
 {
    std::map<Int_t, TDictionary::DeclId_t>::const_iterator it = fIds.find(id);
    if (it == fIds.end()) {
-      ::Error("TVirtualObject::GetMember", "Cannot find data member with id %s for class %s.", id, GetClass()->GetName());
+      ::Error("TVirtualObject::GetMember", "Cannot find data member with id %d for class %s.", 
+              id, GetClass()->GetName());
       return 0;
    }
    TListOfDataMembers* list = (TListOfDataMembers*)(GetClass()->GetListOfDataMembers());

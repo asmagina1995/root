@@ -6,12 +6,13 @@
 
 class TClass;
 
-#include "TMap.h"
 #include "TObject.h"
 #include "TObjArray.h"
 #include "Rtypes.h"
 #include "TString.h"
 #include "TClassRef.h"
+
+#include <map>
 
 namespace ROOT {
 
@@ -72,8 +73,13 @@ namespace ROOT {
          TString                                fClassName;       //  Target class name
          Int_t                                  fVersion;         //  Target class version
          UInt_t                                 fCheckSum;        //  Target class checksum
-
-         TMap*                                  fMappedRules;     //  Map used for quick lookup of rules 
+   
+         typedef std::pair<std::string, std::string>       RuleKey_t;
+         typedef const std::pair<Int_t, Int_t>             RuleVersion_t;
+         typedef std::pair<TSchemaRule*, RuleVersion_t*>   RuleValue_t;
+         typedef std::multimap<RuleKey_t, RuleValue_t>     RuleMap_t;
+         
+         RuleMap_t* fMappedRules;     //  Map used for quick lookup of rules 
    };
 
 } // End of Namespace ROOT

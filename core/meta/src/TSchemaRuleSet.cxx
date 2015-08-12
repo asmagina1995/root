@@ -3,7 +3,6 @@
 
 #include "TSchemaRuleSet.h"
 #include "TSchemaRule.h"
-#include "TMap.h"
 #include "TObjArray.h"
 #include "TObjString.h"
 #include "TClass.h"
@@ -34,8 +33,7 @@ TSchemaRuleSet::TSchemaRuleSet(): fPersistentRules( 0 ), fRemainingRules( 0 ),
    fAllRules        = new TObjArray();
    fAllRules->SetOwner( kTRUE );
 
-   fMappedRules     = new TMap();
-   fMappedRules->SetOwner( kTRUE );
+   fMappedRules = new RuleMap_t();
 }
 
 //------------------------------------------------------------------------------
@@ -140,20 +138,16 @@ Bool_t TSchemaRuleSet::AddRule( TSchemaRule* rule, EConsistencyCheck checkConsis
    //---------------------------------------------------------------------------
    // Check if there is a rule conflicting with this one
    //---------------------------------------------------------------------------
-   TObjArrayIter it( rule->GetTarget() );
-   TSchemaRule *r;
-   TSchemaRule::TKey* key = new TSchemaRule::TKey( rule->GetSourceClass(), " " );
-   TSchemaRule::TValue *val;
+   TObjArrayIter it1( rule->GetTarget() );
+   RuleMap_t::iterator it2;
+   RuleKey_t* key = new RuleKey_t( rule->GetSourceClass(), "" );
+   RuleVersion_t *ver;
    std::vector<std::pair<Int_t, Int_t> >::const_iterator itver;
 
-   while ( (obj = it.Next()) ) {
-      if ( !(val = (TSchemaRule::TValue*) fMappedRules->FindObject(key)) ) 
-         continue;
-
-      for ( itver = rule->GetVersion()->begin(); itver != rule->GetVersion()->end(); ++itver ) {
-         if ( !(r = val->CheckVersion(*itver)) )
-            continue;
-         if ( *r == *rule ) {
+   while ( (obj = it1.Next()) ) {
+      key->second = ((TObjString*)obj)->GetString().Data();
+      for ( it2 = fMappedRules->lower_bound(*key); it2 != fMappedRules->upper_bound(*key); ++it2 ) {
+         if ( it2->second.first == rule ) {
             // The rules are duplicate from each other,
             // just ignore the new ones.
             if (errmsg) {
@@ -161,28 +155,36 @@ Bool_t TSchemaRuleSet::AddRule( TSchemaRule* rule, EConsistencyCheck checkConsis
             }
             delete key;
             return kTRUE; 
+         }  
+      
+         ver = it2->second.second;
+         for ( itver = rule->GetVersion()->begin(); itver != rule->GetVersion()->end(); ++itver ) {
+            if ( ((itver->first >= ver->first) && (itver->first  <= ver->second)) || 
+                  ((itver->first <= ver->first) && (itver->second <= ver->first)) )  
+            {
+               if (errmsg) {
+                  *errmsg = "The existing rule is:\n   ";
+                  it2->second.first->AsString(*errmsg,"s");
+                  *errmsg += "\nand the ignored rule is:\n   ";
+                  rule->AsString(*errmsg);
+                  *errmsg += ".\n";
+               }
+               delete key;
+               return kFALSE;      
+            }
          }
-         if (errmsg) {
-            *errmsg = "The existing rule is:\n   ";
-            r->AsString(*errmsg,"s");
-            *errmsg += "\nand the ignored rule is:\n   ";
-            rule->AsString(*errmsg);
-            *errmsg += ".\n";
-         }
-         delete key;
-         return kFALSE;
       }
    }
 
    //---------------------------------------------------------------------------
    // No conflicts - insert the rules
    //---------------------------------------------------------------------------
-   it.Reset();
-   while ( (obj = it.Next()) ) { 
-      if ( !(val = (TSchemaRule::TValue*) fMappedRules->FindObject(key)) ) 
-         fMappedRules->Add( key, new TSchemaRule::TValue(rule) );
-      else 
-         val->Add( rule );
+   it1.Reset();
+   while ( (obj = it1.Next()) ) { 
+      key->second = ((TObjString*)obj)->GetString().Data();
+      for ( itver = rule->GetVersion()->begin(); itver != rule->GetVersion()->end(); ++itver ) {
+         fMappedRules->insert( std::pair<RuleKey_t, RuleValue_t>(*key, RuleValue_t(rule, &(*itver))) );
+      }
    }
    delete key;
 
@@ -456,6 +458,22 @@ void TSchemaRuleSet::RemoveRule( TSchemaRule* rule )
    fPersistentRules->Remove( rule );
    fRemainingRules->Remove( rule );
    fAllRules->Remove( rule );
+
+   if ( rule->GetTarget() ) {
+      TObjArrayIter it1( rule->GetTarget() );
+      TObject *obj;
+      RuleMap_t::iterator it2;
+      RuleKey_t *key = new RuleKey_t( rule->GetSourceClass(), "" );
+      
+      while( (obj = it1.Next()) ) {
+         key->second = ((TObjString*)obj)->GetString().Data();
+         for ( it2 = fMappedRules->lower_bound(*key); it2 != fMappedRules->upper_bound(*key); ++it2 ) {
+            if ( it2->second.first == rule )
+               fMappedRules->erase( it2 );
+         }
+      }
+      delete key;
+   }
 }
 
 //------------------------------------------------------------------------------

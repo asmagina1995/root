@@ -32,62 +32,7 @@ namespace ROOT {
 
             ClassDef(TSources,2);
          };
-      
-         class TKey : public TObject {
-         private:
-            TString fSourceClass;
-            TString fTarget;
-         public:
-            TKey(const char* source = 0, const char* target = 0) : fSourceClass(source), fTarget(target) {}
-            void        SetSourceClass(const char* source) { fSourceClass = source; }
-            void        SetTarget(const char* target) { fTarget = target; }
-            const char* GetSourceClass() const { return fSourceClass.Data(); }
-            const char* GetTarget() const { return fTarget.Data(); }
-            
-            Bool_t   IsEqual( const TObject* obj ) const 
-            {
-               const TKey* key = (const TKey*)obj;
-               return  fSourceClass == key->fSourceClass && fTarget == key->fTarget;
-            }
-
-            ClassDef(TKey, 1);  
-         };
-
-         class TValue : public TObject {
-         private:
-            std::vector<TSchemaRule*>              fRule;
-            std::vector<std::pair<Int_t, Int_t> >  fVersion;
-
-         public:
-            TValue( TSchemaRule* rule = 0 )
-            {
-               Add( rule );
-            }
-
-            void Add( TSchemaRule* rule ) 
-            {
-               std::vector<std::pair<Int_t, Int_t> >::const_iterator it;
-               for ( it = rule->GetVersion()->begin(); it != rule->GetVersion()->end(); ++it ) {
-                  fRule.push_back( rule );
-                  fVersion.push_back( *it );
-               }            
-            }
-
-            TSchemaRule *CheckVersion( const std::pair<Int_t, Int_t>& v ) const  
-            { 
-               if ( fVersion.empty() )
-                  return 0;
-               for ( UInt_t i = 0; i < fVersion.size(); i++ ) {
-                  if ( ((v.first >= fVersion[i].first) && (v.first  <= fVersion[i].second)) || 
-                       ((v.first <= fVersion[i].first) && (v.second <= fVersion[i].first)) ) 
-                     return (TSchemaRule*)(fRule[i]);
-               }
-               return 0; 
-            }
-
-            ClassDef(TValue, 1);
-         };
-
+         
          typedef enum
          {
             kReadRule    = 0,

@@ -1840,7 +1840,7 @@ Bool_t TClass::AddRule( const char *rule, Bool_t emulation )
    }
 
    // Set pointer to wrapper function
-   void *address = gInterpreter->GetInterfaceMethod(0, rule_values["funcname"].c_str(), "0, 0"); // incorrect ptr??
+   void *address = gInterpreter->GetInterfaceMethod(0, rule_values["funcname"].c_str(), "0, 0");
    if ( ruleobj->GetRuleType()==ROOT::TSchemaRule::kReadRule ) 
       ruleobj->SetReadFunctionPointer( (ROOT::TSchemaRule::ReadFuncPtr_t)address ) ;
    else if ( ruleobj->GetRuleType()==ROOT::TSchemaRule::kReadRawRule ) 

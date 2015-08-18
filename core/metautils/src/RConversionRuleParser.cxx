@@ -2,6 +2,7 @@
 // author: Lukasz Janyst <ljanyst@cern.ch>
 
 #include "RConversionRuleParser.h"
+#include "TDataType.h"
 #include "TSchemaRuleProcessor.h"
 #include "TMetaUtils.h"
 
@@ -477,14 +478,22 @@ namespace ROOT
                // fprintf(stderr, "Seeing %s %s %s\n", it->first.fType.c_str(), it->second.c_str(), it->first.fDimensions.c_str());
                if( it->first.fType.size() ) {
                   if ( it->first.fDimensions.size() ) {
-                     output << "         typedef " << it->first.fType;
+                     output << "         typedef ";
+                     if ( TDataType(it->first.fType.c_str()).GetType() >= 0 )
+                        output << it->first.fType;
+                     else
+                        output << "TVirtualObject";
                      output << " onfile_" << it->second << "_t" << it->first.fDimensions << ";\n";
                      output << "         ";
                      output << "onfile_" << it->second << "_t &" << it->second << ";\n";
 
                   } else {
                      output << "         ";
-                     output << it->first.fType << " &" << it->second << ";\n";
+                     if ( TDataType(it->first.fType.c_str()).GetType() >= 0 )
+                        output << it->first.fType;
+                     else
+                        output << "TVirtualObject";
+                     output<< " &" << it->second << ";\n";
                   }
                }
             }
@@ -501,9 +510,14 @@ namespace ROOT
                   output << ", ";
                else
                   start = false;
-
+               
                if (it->first.fDimensions.size() == 0) {
-                  output << it->first.fType << " &onfile_" << it->second;
+                  TDataType dm(it->first.fType.c_str());
+                  if ( dm.GetType() >= 0 )
+                     output << it->first.fType;
+                  else
+                     output << "TVirtualObject";
+                  output << " &onfile_" << it->second;
                } else {
                   output << " onfile_" << it->second << "_t" << " &onfile_" << it->second;
                }
@@ -530,13 +544,13 @@ namespace ROOT
             //-----------------------------------------------------------------
             // Initialize the structure - to be changed later
             //-----------------------------------------------------------------
-            for( it = source.begin(); it != source.end(); ++it ) {
+            /*for( it = source.begin(); it != source.end(); ++it ) {
                output << "      ";
                output << "static Long_t offset_Onfile_" << mappedName;
                output << "_" << it->second << " = oldObj->GetClass()->GetDataMemberOffset(\"";
                output << it->second << "\");\n";
             }
-            output << "      " << "char *onfile_add = (char*)oldObj->GetObject();\n";
+            output << "      " << "char *onfile_add = (char*)oldObj->GetObject();\n";*/
             output << "      " << mappedName << "_Onfile onfile(\n";
 
             for( start = true, it = source.begin(); it != source.end(); ++it ) {
@@ -550,14 +564,17 @@ namespace ROOT
                   start = false;
 
                output << "         ";
-               output << "*(";
+               output << "*";
                if (it->first.fDimensions.size() == 0) {
-                  output << it->first.fType;
+                  onfileMemberType =  ? it->first.fType : "TVirtualObject";
+                  output << onfileMemberType;
                } else {
                   output << mappedName << "_Onfile::onfile_" << it->second << "_t";
                }
-               output << "*)(onfile_add+offset_Onfile_";
-               output << mappedName << "_" << it->second << ")";
+               output << "oldObj->GetMemder";
+               if ( TDataType(it->first.fType.c_str()).GetType() >= 0 )
+                  output << "<onfileMemberType>"; 
+               output << "(id_" << it->second << ")";
             }
             output << " );\n\n";
          }

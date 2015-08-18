@@ -4,6 +4,7 @@
 #include "TListOfDataMembers.h"
 #include "TSchemaRule.h"
 #include "TSchemaRuleSet.h"
+#include "TVirtualCollectionProxy.h"
 
 ClassImp(TVirtualObject)
 
@@ -18,7 +19,7 @@ Int_t TVirtualObject::GetSize() const
 {
    if (!IsCollection())
       return 0;
-   return 0;
+   return fClass->GetCollectionProxy()->Size();
 }
 
 //______________________________________________________________________________
@@ -40,12 +41,15 @@ TVirtualObject *TVirtualObject::GetMember(Int_t id) const
    }
    TListOfDataMembers* list = (TListOfDataMembers*)(GetClass()->GetListOfDataMembers());
    TDataMember* dm = (TDataMember*)list->Get(it->second);
-   return new TVirtualObject(dm->GetClass());
+   TVirtualObject* obj = new TVirtualObject(0);
+   obj->fClass  = dm->GetClass(); 
+   obj->fObject = (void*)((char*)fObject + dm->GetOffset());
+   return obj;
 }
 
 //______________________________________________________________________________
 template<typename T>
-T TVirtualObject::GetMember(Int_t id) const
+T *TVirtualObject::GetMember(Int_t id) const
 {
    std::map<Int_t, TDictionary::DeclId_t>::const_iterator it = fIds.find(id);
    if (it == fIds.end()) {
@@ -55,13 +59,13 @@ T TVirtualObject::GetMember(Int_t id) const
    }
    TListOfDataMembers* list = (TListOfDataMembers*)(GetClass()->GetListOfDataMembers());
    TDataMember* dm = (TDataMember*)list->Get(it->second);
-   return *(T*)((char*)fObject + dm->GetOffset());
+   return (T*)((char*)fObject + dm->GetOffset());
 }
 
 // Template instantiations
-template double TVirtualObject::GetMember(Int_t id) const;
-template long double TVirtualObject::GetMember(Int_t id) const;
-template long long TVirtualObject::GetMember(Int_t id) const;
+template double* TVirtualObject::GetMember(Int_t id) const;
+template long double* TVirtualObject::GetMember(Int_t id) const;
+template long long* TVirtualObject::GetMember(Int_t id) const;
 
 //______________________________________________________________________________
 UInt_t TVirtualObject::GetId(TString name)

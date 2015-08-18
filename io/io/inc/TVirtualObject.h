@@ -53,7 +53,7 @@ public:
    Int_t                   GetSize() const;
    TVirtualObject         *At(Int_t i) const;
    TVirtualObject         *GetMember(Int_t id) const;
-   template<typename T> T  GetMember(Int_t id) const;
+   template<typename T> T *GetMember(Int_t id) const;
    UInt_t                  GetId(TString name);
    Bool_t                  Load(void *address);
    Int_t                   GetClassVersion() const;

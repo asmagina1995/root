@@ -182,6 +182,9 @@ Bool_t TSchemaRuleSet::AddRule( TSchemaRule* rule, EConsistencyCheck checkConsis
          }
 
          // ckeck versions
+         if ( !rule->GetVersion() || !(it2->second->GetVersion()) )
+            continue;
+
          for ( it_ver1 = it2->second->GetVersion()->begin(); it_ver1 != it2->second->GetVersion()->end(); ++it_ver1 ) {
             for ( it_ver2 = rule->GetVersion()->begin(); it_ver2 != rule->GetVersion()->end(); ++it_ver2 ) {
                if ( ! (((it_ver1->first >= it_ver2->first) && (it_ver1->first  <= it_ver2->second)) || 

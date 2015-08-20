@@ -75,11 +75,11 @@ namespace ROOT {
          UInt_t                                 fCheckSum;        //  Target class checksum
    
          typedef std::pair<std::string, std::string>       RuleKey_t;
-         typedef const std::pair<Int_t, Int_t>             RuleVersion_t;
-         typedef std::pair<TSchemaRule*, RuleVersion_t*>   RuleValue_t;
-         typedef std::multimap<RuleKey_t, RuleValue_t>     RuleMap_t;
+         typedef std::multimap<RuleKey_t, TSchemaRule*>    RuleMap_t;
          
-         RuleMap_t* fMappedRules;     //  Map used for quick lookup of rules 
+         RuleMap_t* fSourceTargets;     //!  Map used for quick lookup of rules 
+   
+         void ProcessSourceTargets( TSchemaRule* rule );
    };
 
 } // End of Namespace ROOT

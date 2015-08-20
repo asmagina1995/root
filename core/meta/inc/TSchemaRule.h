@@ -59,6 +59,8 @@ namespace ROOT {
          const char      *GetVersionString( ) const;
          Bool_t           SetVersion( const TString& version );
          Bool_t           TestVersion( Int_t version ) const;
+         const char      *GetChecksumString() const;
+         const std::vector<UInt_t>* GetChecksum() const;
          Bool_t           SetChecksum( const TString& checksum );
          Bool_t           TestChecksum( UInt_t checksum ) const;
          void             SetSourceClass( const TString& classname );

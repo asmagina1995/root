@@ -456,6 +456,23 @@ Bool_t TSchemaRule::TestChecksum( UInt_t checksum ) const
 }
 
 //------------------------------------------------------------------------------
+const char *TSchemaRule::GetChecksumString() const
+{
+   return fChecksum;
+}
+
+//------------------------------------------------------------------------------
+const std::vector<UInt_t>* TSchemaRule::GetChecksum() const
+{
+   if( fChecksum == "" )
+      return 0;
+
+   if( !fChecksumVect )
+      ProcessChecksum( fChecksum ); // At this point the checksum string should always be correct
+   return fChecksumVect;
+}
+
+//------------------------------------------------------------------------------
 void TSchemaRule::SetSourceClass( const TString& classname )
 {
    // Set the source class of this rule (i.e. the onfile class).
@@ -956,32 +973,3 @@ void TSchemaRule::ProcessDeclaration( TObjArray* array, const TString& list )
       array->Add( type );
    }
 }
-
-#if 0
-//------------------------------------------------------------------------------
-Bool_t TSchemaRule::GenerateFor( TStreamerInfo *info )
-{
-   // Generate the actual function for the rule.
-
-   String funcname = fSourceClass + "_to_" + fTargetClass;
-   if (info) funcname += "_v" + info->GetClassVersion();
-   TString names = fSource + "_" + fTarget;
-   name.ReplaceAll(',','_');
-   name.ReplaceAll(':','_');
-   funcname += "_" + name;
-
-   String filename = funcname + ".C";
-   if (!false) {
-      filename += '+';
-   }
-
-   std::ofstream fileout(filename);
-
-
-      ROOT::WriteReadRawRuleFunc( *rIt, 0, mappedname, nameTypeMap, fileout );
-      ROOT::WriteReadRuleFunc( *rIt, 0, mappedname, nameTypeMap, fileout );
-
-   gROOT->LoadMacro(filename);
-}
-
-#endif

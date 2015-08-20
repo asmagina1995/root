@@ -1773,7 +1773,22 @@ Bool_t TClass::AddRule( const char *rule, Bool_t emulation )
   
    // Convert rule to TSchemaRule object
    ROOT::TSchemaRule *ruleobj = new ROOT::TSchemaRule();
-   ruleobj->SetFromRule(rule_values);
+   ruleobj->SetFromRule( rule_values );
+
+   // Replace nested objects with proxy
+   TObjArrayIter it1( ruleobj->GetSource() );
+   TObject* obj;
+   ROOT::TSchemaRule::TSources* source;
+   TString source_string;
+   while ( (obj = it1.Next()) ) {
+      source = (ROOT::TSchemaRule::TSources*)obj;
+      if ( GetClass(source->GetTitle()) )
+         source->SetTitle( "TVirtualObject*" );
+      source_string += Form( "%s %s%s;", source->GetTitle(), source->GetName(), source->GetDimensions() );
+   }
+
+   if ( rule_values.find( "source" ) != rule_values.end() )
+      rule_values.find( "source" )->second = source_string.Data();
 
    R__LOCKGUARD(gInterpreterMutex);
    
@@ -1808,11 +1823,10 @@ Bool_t TClass::AddRule( const char *rule, Bool_t emulation )
 
    // Extract target class members type map
    ROOT::MembersTypeMap_t type_map;
-   TObjArrayIter it1(ruleobj->GetTarget());
-   TObject* obj;
+   TObjArrayIter it2(ruleobj->GetTarget());
    TDataMember* dm;
    std::string array_dim;
-   while ( (obj = it1.Next()) ) {
+   while ( (obj = it2.Next()) ) {
       dm = cl->GetDataMember( ((TObjString*)obj)->String().Data() );
       array_dim = dm->GetArrayDim() > 0 ? Form( "[%d]", dm->GetArrayDim() ) : "";
       type_map[ ((TObjString*)obj)->String().Data() ] = ROOT::TSchemaType( dm->GetTypeName(), array_dim.c_str() );
@@ -1825,10 +1839,12 @@ Bool_t TClass::AddRule( const char *rule, Bool_t emulation )
    else if ( ruleobj->GetRuleType()==ROOT::TSchemaRule::kReadRawRule ) 
       ROOT::WriteReadRuleFunc(rule_values, rset->GetRules()->GetEntries(), rule_values["targetClass"], type_map, wrapper );
 
+   std::cout << wrapper.str() << std::endl;
+
    // Compile wrapper function
    if ( ruleobj->GetInclude() ) {
-      TObjArrayIter it2(ruleobj->GetInclude());
-      while ( (obj = it2.Next()) )
+      TObjArrayIter it3(ruleobj->GetInclude());
+      while ( (obj = it3.Next()) )
          gInterpreter->ProcessLine( Form("#include %s", ((TObjString*)obj)->String().Data()) );
    }
 
@@ -1839,13 +1855,15 @@ Bool_t TClass::AddRule( const char *rule, Bool_t emulation )
       return kFALSE;   
    }
 
+   rset->AddRule( ruleobj, ROOT::TSchemaRuleSet::kNoCheck );
+
    // Set pointer to wrapper function
    void *address = gInterpreter->GetInterfaceMethod(0, rule_values["funcname"].c_str(), "0, 0");
    if ( ruleobj->GetRuleType()==ROOT::TSchemaRule::kReadRule ) 
       ruleobj->SetReadFunctionPointer( (ROOT::TSchemaRule::ReadFuncPtr_t)address ) ;
    else if ( ruleobj->GetRuleType()==ROOT::TSchemaRule::kReadRawRule ) 
       ruleobj->SetReadRawFunctionPointer( (ROOT::TSchemaRule::ReadRawFuncPtr_t)address );
-
+   
    return kTRUE;
 }
 

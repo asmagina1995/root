@@ -2,7 +2,6 @@
 // author: Lukasz Janyst <ljanyst@cern.ch>
 
 #include "RConversionRuleParser.h"
-#include "TDataType.h"
 #include "TSchemaRuleProcessor.h"
 #include "TMetaUtils.h"
 
@@ -456,7 +455,7 @@ namespace ROOT
          Bool_t generateOnFile = false;
          for( it = source.begin(); it != source.end(); ++it ) {
             output << "      ";
-            output << "static Int_t id_" << it->second << " = oldObj->GetId(";
+            output << "static UInt_t id_" << it->second << " = oldObj->GetId(";
             output << "\"" << it->second << "\");" << std::endl;
 
             if( it->first.fType != "" )
@@ -475,25 +474,16 @@ namespace ROOT
             // List the data members with non-empty type declarations
             //-----------------------------------------------------------------
             for( it = source.begin(); it != source.end(); ++it ) {
-               // fprintf(stderr, "Seeing %s %s %s\n", it->first.fType.c_str(), it->second.c_str(), it->first.fDimensions.c_str());
                if( it->first.fType.size() ) {
                   if ( it->first.fDimensions.size() ) {
-                     output << "         typedef ";
-                     if ( TDataType(it->first.fType.c_str()).GetType() >= 0 )
-                        output << it->first.fType;
-                     else
-                        output << "TVirtualObject";
+                     output << "         typedef " << it->first.fType;
                      output << " onfile_" << it->second << "_t" << it->first.fDimensions << ";\n";
                      output << "         ";
-                     output << "onfile_" << it->second << "_t &" << it->second << ";\n";
+                     output << "onfile_" << it->second << "_t " << it->second << ";\n";
 
                   } else {
-                     output << "         ";
-                     if ( TDataType(it->first.fType.c_str()).GetType() >= 0 )
-                        output << it->first.fType;
-                     else
-                        output << "TVirtualObject";
-                     output<< " &" << it->second << ";\n";
+                     output << "         " << it->first.fType;
+                     output<< " " << it->second << ";\n";
                   }
                }
             }
@@ -512,17 +502,12 @@ namespace ROOT
                   start = false;
                
                if (it->first.fDimensions.size() == 0) {
-                  TDataType dm(it->first.fType.c_str());
-                  if ( dm.GetType() >= 0 )
-                     output << it->first.fType;
-                  else
-                     output << "TVirtualObject";
-                  output << " &onfile_" << it->second;
+                  output << it->first.fType << " onfile_" << it->second;
                } else {
-                  output << " onfile_" << it->second << "_t" << " &onfile_" << it->second;
+                  output << " onfile_" << it->second << "_t" << " onfile_" << it->second;
                }
             }
-            output << " ): ";
+            output << "): ";
 
             //-----------------------------------------------------------------
             // Generate the constructor's initializer list
@@ -542,17 +527,9 @@ namespace ROOT
             output << "      " << "};\n";
 
             //-----------------------------------------------------------------
-            // Initialize the structure - to be changed later
+            // Initialize the structure
             //-----------------------------------------------------------------
-            /*for( it = source.begin(); it != source.end(); ++it ) {
-               output << "      ";
-               output << "static Long_t offset_Onfile_" << mappedName;
-               output << "_" << it->second << " = oldObj->GetClass()->GetDataMemberOffset(\"";
-               output << it->second << "\");\n";
-            }
-            output << "      " << "char *onfile_add = (char*)oldObj->GetObject();\n";*/
             output << "      " << mappedName << "_Onfile onfile(\n";
-
             for( start = true, it = source.begin(); it != source.end(); ++it ) {
                if( it->first.fType == "" )
                   continue;
@@ -564,16 +541,10 @@ namespace ROOT
                   start = false;
 
                output << "         ";
-               output << "*";
-               if (it->first.fDimensions.size() == 0) {
-                  onfileMemberType =  ? it->first.fType : "TVirtualObject";
-                  output << onfileMemberType;
-               } else {
-                  output << mappedName << "_Onfile::onfile_" << it->second << "_t";
+               if (it->first.fDimensions.size() > 0) {
+                  output << "(" << mappedName << "_Onfile::onfile_" << it->second << "_t)";
                }
-               output << "oldObj->GetMemder";
-               if ( TDataType(it->first.fType.c_str()).GetType() >= 0 )
-                  output << "<onfileMemberType>"; 
+               output << "oldObj->GetMember<" << it->first.fType << ">"; 
                output << "(id_" << it->second << ")";
             }
             output << " );\n\n";

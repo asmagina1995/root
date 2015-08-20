@@ -34,7 +34,7 @@
 
 class TVirtualObject {
 private:
-   std::map<Int_t, TDictionary::DeclId_t> fIds;
+   std::map<UInt_t, TDictionary::DeclId_t> fIds;
 
    TVirtualObject(const TVirtualObject&);             // not implemented
    TVirtualObject &operator=(const TVirtualObject&);  // not implemented
@@ -43,7 +43,7 @@ public:
    TClassRef  fClass;
    void      *fObject;
 
-   TVirtualObject(TClass *cl) : fClass(cl), fObject(cl ? cl->New() : 0) { }
+   TVirtualObject(TClass *cl= 0) : fClass(cl), fObject(cl ? cl->New() : 0) { }
    ~TVirtualObject() { if (fClass) fClass->Destructor(fObject); }
 
    TClass  *GetClass() const { return fClass; }
@@ -53,9 +53,9 @@ public:
    Int_t                   GetSize() const;
    TVirtualObject         *At(Int_t i) const;
    TVirtualObject         *GetMember(Int_t id) const;
-   template<typename T> T *GetMember(Int_t id) const;
-   UInt_t                  GetId(TString name);
-   Bool_t                  Load(void *address);
+   template<typename T> T  GetMember(Int_t id) const;
+   UInt_t                  GetId(const char* name);
+   Bool_t                  Load(void *address, const char* classname);
    Int_t                   GetClassVersion() const;
 };
 

@@ -1,12 +1,10 @@
 #include "TVirtualObject.h"
 #include "TDataMember.h"
 #include "TError.h"
-#include "TInterpreter.h"
 #include "TListOfDataMembers.h"
 #include "TSchemaRule.h"
 #include "TSchemaRuleSet.h"
 #include "TVirtualCollectionProxy.h"
-#include "TVirtualMutex.h"
 
 #include <iostream>
 
@@ -23,9 +21,10 @@ Int_t TVirtualObject::GetSize() const
 {
    if (!IsCollection())
       return 0;
-  
-  R__LOCKGUARD2(gInterpreterMutex);
-  return (Int_t)gInterpreter->Calc(Form("((%s)((void*)%p))->size()", GetClass()->GetName(), fObject));
+   GetClass()->GetCollectionProxy()->PushProxy(fObject);
+   Int_t size = GetClass()->GetCollectionProxy()->Size(); 
+   GetClass()->GetCollectionProxy()->PopProxy();
+   return size;
 }
 
 //______________________________________________________________________________
@@ -33,10 +32,13 @@ TVirtualObject *TVirtualObject::At(Int_t i) const
 {
    if (!IsCollection())
       return 0;
-  
+
    TVirtualObject* obj = new TVirtualObject();
    obj->fClass  = GetClass()->GetCollectionProxy()->GetValueClass();
-   obj->fObject = (void*)gInterpreter->Calc(Form("&((*((%s*)((void*)%p)))[%d])", GetClass()->GetName(), fObject, i));
+   
+   GetClass()->GetCollectionProxy()->PushProxy(fObject);
+   obj->fObject = GetClass()->GetCollectionProxy()->At(i);
+   GetClass()->GetCollectionProxy()->PopProxy();
    return obj;
 }
 

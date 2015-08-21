@@ -1774,11 +1774,11 @@ Bool_t TClass::AddRule( const char *rule, Bool_t emulation )
    // Convert rule to TSchemaRule object
    ROOT::TSchemaRule *ruleobj = new ROOT::TSchemaRule();
    ruleobj->SetFromRule( rule_values );
-
+/*
    // Replace nested objects with proxy
-   TObjArrayIter it1( ruleobj->GetSource() );
+   TObjArrayIter it1( ruleobj->GetSource() );*/
    TObject* obj;
-   ROOT::TSchemaRule::TSources* source;
+/*   ROOT::TSchemaRule::TSources* source;
    TString source_string;
    while ( (obj = it1.Next()) ) {
       source = (ROOT::TSchemaRule::TSources*)obj;
@@ -1789,7 +1789,7 @@ Bool_t TClass::AddRule( const char *rule, Bool_t emulation )
 
    if ( rule_values.find( "source" ) != rule_values.end() )
       rule_values.find( "source" )->second = source_string.Data();
-
+*/
    R__LOCKGUARD(gInterpreterMutex);
    
    // Check target class 
@@ -1839,7 +1839,7 @@ Bool_t TClass::AddRule( const char *rule, Bool_t emulation )
    else if ( ruleobj->GetRuleType()==ROOT::TSchemaRule::kReadRawRule ) 
       ROOT::WriteReadRuleFunc(rule_values, rset->GetRules()->GetEntries(), rule_values["targetClass"], type_map, wrapper );
 
-   std::cout << wrapper.str() << std::endl;
+//   std::cout << wrapper.str() << std::endl;
 
    // Compile wrapper function
    if ( ruleobj->GetInclude() ) {

@@ -38,7 +38,6 @@
 //*-*x7.5 macros/layout_class
 #include "TClass.h"
 
-#include "RConversionRuleParser.h"
 #include "Riostream.h"
 #include "TBaseClass.h"
 #include "TBrowser.h"
@@ -99,8 +98,6 @@
 #include "TListOfEnumsWithLock.h"
 #include "TViewPubDataMembers.h"
 #include "TViewPubFunctions.h"
-
-#include <iostream>
 
 using namespace std;
 
@@ -1763,106 +1760,35 @@ Bool_t TClass::AddRule( const char *rule, Bool_t emulation )
    //   checksum : comma delimited list of the checksums of the class layout that this rule applies to.
    //   code={...} : code to be executed for the rule or name of the function implementing it.
 
-   // Parse rule from string
-   ROOT::MembersMap_t rule_values;
-   std::string error_string;
-   if( !ROOT::ParseRule( rule, rule_values, error_string ) ) {
-      ::Error( "TClass::AddRule","The rule (%s) is invalid: %s",rule,error_string.c_str() );
-      return kFALSE;
-   }
-  
-   // Convert rule to TSchemaRule object
    ROOT::TSchemaRule *ruleobj = new ROOT::TSchemaRule();
-   ruleobj->SetFromRule( rule_values );
-/*
-   // Replace nested objects with proxy
-   TObjArrayIter it1( ruleobj->GetSource() );*/
-   TObject* obj;
-/*   ROOT::TSchemaRule::TSources* source;
-   TString source_string;
-   while ( (obj = it1.Next()) ) {
-      source = (ROOT::TSchemaRule::TSources*)obj;
-      if ( GetClass(source->GetTitle()) )
-         source->SetTitle( "TVirtualObject*" );
-      source_string += Form( "%s %s%s;", source->GetTitle(), source->GetName(), source->GetDimensions() );
-   }
-
-   if ( rule_values.find( "source" ) != rule_values.end() )
-      rule_values.find( "source" )->second = source_string.Data();
-*/
-   R__LOCKGUARD(gInterpreterMutex);
-   
-   // Check target class 
-   TClass *cl = TClass::GetClass( ruleobj->GetTargetClass() );
-   if ( !cl ) {
-      if ( emulation ) {
-         // Create an empty emulated class for now.
-         cl = gInterpreter->GenerateTClass(ruleobj->GetTargetClass(), /* emulation = */ kTRUE, /*silent = */ kTRUE);
-      }
-      else {
-         ::Error( "TClass::AddRule", "The rule for class \"%s\" is invalid: the class is not loaded", 
-                 ruleobj->GetTargetClass() );
-         delete ruleobj;
-         return kFALSE;
-      }
-   }
-
-   // Add rule to TSchemaRule set
-   ROOT::TSchemaRuleSet* rset = cl->GetSchemaRules( kTRUE );
-
-   TString errmsg;
-   if( !rset->AddRule( ruleobj, ROOT::TSchemaRuleSet::kCheckAll, &errmsg ) ) {
-      ::Error("TClass::AddRule", "The rule for class: \"%s\": version \"%s\" and data members: \"%s\" has been skipped (%s).",
-               ruleobj->GetTargetClass(), ruleobj->GetVersionString(), ruleobj->GetTargetString(), errmsg.Data() );
+   if ( !ruleobj->SetFromRule( rule )) {
       delete ruleobj;
       return kFALSE;
    }
    
-   if ( emulation )
-      return kTRUE;
-
-   // Extract target class members type map
-   ROOT::MembersTypeMap_t type_map;
-   TObjArrayIter it2(ruleobj->GetTarget());
-   TDataMember* dm;
-   std::string array_dim;
-   while ( (obj = it2.Next()) ) {
-      dm = cl->GetDataMember( ((TObjString*)obj)->String().Data() );
-      array_dim = dm->GetArrayDim() > 0 ? Form( "[%d]", dm->GetArrayDim() ) : "";
-      type_map[ ((TObjString*)obj)->String().Data() ] = ROOT::TSchemaType( dm->GetTypeName(), array_dim.c_str() );
+   R__LOCKGUARD(gInterpreterMutex);
+   
+   TClass *cl = TClass::GetClass( ruleobj->GetTargetClass() );
+   if ( emulation ) {
+      // Create an empty emulated class for now.
+      cl = gInterpreter->GenerateTClass(ruleobj->GetTargetClass(), /* emulation = */ kTRUE, /*silent = */ kTRUE);
+   }
+   if ( !cl ) {
+      ::Error( "TClass::AddRule", "The rule for class \"%s\" is invalid: the class is not loaded", 
+               ruleobj->GetTargetClass() );
+      delete ruleobj;
+      return kFALSE;
    }
 
-   // Create wrapper for a rule
-   std::ostringstream wrapper;
-   if ( ruleobj->GetRuleType()==ROOT::TSchemaRule::kReadRule ) 
-      ROOT::WriteReadRuleFunc(rule_values, rset->GetRules()->GetEntries(), rule_values["targetClass"], type_map, wrapper );
-   else if ( ruleobj->GetRuleType()==ROOT::TSchemaRule::kReadRawRule ) 
-      ROOT::WriteReadRuleFunc(rule_values, rset->GetRules()->GetEntries(), rule_values["targetClass"], type_map, wrapper );
-
-//   std::cout << wrapper.str() << std::endl;
-
-   // Compile wrapper function
-   if ( ruleobj->GetInclude() ) {
-      TObjArrayIter it3(ruleobj->GetInclude());
-      while ( (obj = it3.Next()) )
-         gInterpreter->ProcessLine( Form("#include %s", ((TObjString*)obj)->String().Data()) );
+   // Add rule to TSchemaRule set
+   ROOT::TSchemaRuleSet* rset = cl->GetSchemaRules( kTRUE );
+   TString errmsg;
+   if( !rset->AddRule( ruleobj, ROOT::TSchemaRuleSet::kCheckAll, &errmsg ) ) {
+      ::Error("TClass::AddRule", "The rule for class: \"%s\": version \"%s\" and data members: \"%s\" has been skipped (%s).",
+              ruleobj->GetTargetClass(), ruleobj->GetVersion(), ruleobj->GetTargetString(), errmsg.Data() );
+      delete ruleobj;
+      return kFALSE;
    }
-
-   if ( !gInterpreter->Declare(wrapper.str().c_str()) ) {
-      ::Error( "TClass::AddRule", "The rule for class: \"%s\", version \"%s\" and data members \"%s\" has been skipped because it cannot be compiled.",
-                ruleobj->GetTargetClass(), ruleobj->GetVersionString(), ruleobj->GetTargetString() );
-      rset->RemoveRule( ruleobj );    
-      return kFALSE;   
-   }
-
-   rset->AddRule( ruleobj, ROOT::TSchemaRuleSet::kNoCheck );
-
-   // Set pointer to wrapper function
-   void *address = gInterpreter->GetInterfaceMethod(0, rule_values["funcname"].c_str(), "0, 0");
-   if ( ruleobj->GetRuleType()==ROOT::TSchemaRule::kReadRule ) 
-      ruleobj->SetReadFunctionPointer( (ROOT::TSchemaRule::ReadFuncPtr_t)address ) ;
-   else if ( ruleobj->GetRuleType()==ROOT::TSchemaRule::kReadRawRule ) 
-      ruleobj->SetReadRawFunctionPointer( (ROOT::TSchemaRule::ReadRawFuncPtr_t)address );
    
    return kTRUE;
 }

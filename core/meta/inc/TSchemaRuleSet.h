@@ -12,7 +12,7 @@ class TClass;
 #include "TString.h"
 #include "TClassRef.h"
 
-#include <map>
+class THashTable;
 
 namespace ROOT {
 
@@ -66,20 +66,14 @@ namespace ROOT {
 
       private:
 
-         TObjArray*                             fPersistentRules; //  Array of the rules that will be embeded in the file
-         TObjArray*                             fRemainingRules;  //! Array of non-persisten rules - just for cleanup purposes - owns the elements
-         TObjArray*                             fAllRules;        //! Array of all rules
-         TClassRef                              fClass;           //! Target class pointer (for consistency checking)
-         TString                                fClassName;       //  Target class name
-         Int_t                                  fVersion;         //  Target class version
-         UInt_t                                 fCheckSum;        //  Target class checksum
-   
-         typedef std::pair<std::string, std::string>       RuleKey_t;
-         typedef std::multimap<RuleKey_t, TSchemaRule*>    RuleMap_t;
-         
-         RuleMap_t* fSourceTargets;     //!  Map used for quick lookup of rules 
-   
-         void ProcessSourceTargets( TSchemaRule* rule );
+         TObjArray*     fPersistentRules; //  Array of the rules that will be embeded in the file
+         TObjArray*     fRemainingRules;  //! Array of non-persisten rules - just for cleanup purposes - owns the elements
+         TObjArray*     fAllRules;        //! Array of all rules
+         TClassRef      fClass;           //! Target class pointer (for consistency checking)
+         TString        fClassName;       //  Target class name
+         Int_t          fVersion;         //  Target class version
+         UInt_t         fCheckSum;        //  Target class checksum
+         THashTable*    fRulesHash;       //
    };
 
 } // End of Namespace ROOT

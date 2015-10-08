@@ -6,11 +6,11 @@
 
 class TBuffer;
 class TVirtualObject;
+class TVirtualStreamerInfo;
 class TObjArray;
 
 #include "TObject.h"
 #include "TNamed.h"
-#include "RConversionRuleParser.h"
 #include "Rtypes.h"
 #include "TString.h"
 
@@ -18,7 +18,7 @@ class TObjArray;
 #include <utility>
 
 namespace ROOT {
- 
+
    class TSchemaRule: public TObject
    {
       public:
@@ -32,7 +32,7 @@ namespace ROOT {
 
             ClassDef(TSources,2);
          };
-         
+
          typedef enum
          {
             kReadRule    = 0,
@@ -53,14 +53,10 @@ namespace ROOT {
 
          void             Clear(Option_t * /*option*/ ="");
          Bool_t           SetFromRule( const char *rule );
-         Bool_t           SetFromRule( MembersMap_t& rule_values );
 
-         const std::vector<std::pair<Int_t, Int_t> >* GetVersion() const;
-         const char      *GetVersionString( ) const;
+         const char      *GetVersion( ) const;
          Bool_t           SetVersion( const TString& version );
          Bool_t           TestVersion( Int_t version ) const;
-         const char      *GetChecksumString() const;
-         const std::vector<UInt_t>* GetChecksum() const;
          Bool_t           SetChecksum( const TString& checksum );
          Bool_t           TestChecksum( UInt_t checksum ) const;
          void             SetSourceClass( const TString& classname );
@@ -97,6 +93,10 @@ namespace ROOT {
          void             AsString( TString &out, const char *options = "" ) const;
          void             ls(Option_t *option="") const;
 
+         ULong_t          Hash() const;
+
+         Bool_t           GenerateFor( const TVirtualStreamerInfo* info );
+
          ClassDef( TSchemaRule, 1 );
 
       private:
@@ -125,7 +125,6 @@ namespace ROOT {
          RuleType_t                   fRuleType;       //  Type of the rule
          TString                      fAttributes;     //  Attributes to be applied to the member (like Owner/NotOwner)
    };
-
 } // End of namespace ROOT
 
 #endif // ROOT_TSchemaRule

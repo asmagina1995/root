@@ -110,11 +110,11 @@ Bool_t TSchemaRuleSet::AddRule( TSchemaRule* rule, EConsistencyCheck checkConsis
    //---------------------------------------------------------------------------
    // Check if rule is already exists
    //---------------------------------------------------------------------------
-   if ( fRulesHash->GetListForObject(rule) ) {
+/*   if ( fRulesHash->GetListForObject(rule) ) {
       delete rule;
       return kTRUE;
    }
-
+*/
    //---------------------------------------------------------------------------
    // Check if all of the target data members specified in the rule are
    // present int the target class
@@ -125,7 +125,6 @@ Bool_t TSchemaRuleSet::AddRule( TSchemaRule* rule, EConsistencyCheck checkConsis
    R__LOCKGUARD2(gInterpreterMutex);
 
    bool streamerInfosTest = (fClass->GetStreamerInfos()==0 || fClass->GetStreamerInfos()->GetEntries()==0);
-
    if( rule->GetTarget() && !(fClass->TestBit(TClass::kIsEmulation) && streamerInfosTest) ) {
       TObjArrayIter titer( rule->GetTarget() );
       while( (obj = titer.Next()) ) {
@@ -133,7 +132,6 @@ Bool_t TSchemaRuleSet::AddRule( TSchemaRule* rule, EConsistencyCheck checkConsis
          if( !fClass->GetDataMember( str->GetString() ) && !fClass->GetBaseClass( str->GetString() ) ) {
             if (checkConsistency == kCheckAll) {
                if (errmsg) {
-                  *errmsg += "it conflicts with one of the other rules";
                   *errmsg += Form("the target member (%s) is unknown ", str->GetString().Data());
                }
                return kFALSE;
@@ -181,7 +179,7 @@ Bool_t TSchemaRuleSet::AddRule( TSchemaRule* rule, EConsistencyCheck checkConsis
    //---------------------------------------------------------------------------
    // No conflicts - compile rule
    //---------------------------------------------------------------------------
-   if( !(fClass->TestBit(TClass::kIsEmulation) && streamerInfosTest) ) {
+   if ( !(fClass->TestBit(TClass::kIsEmulation) && streamerInfosTest) ) {
       if ( !rule->GenerateFor(fClass->GetStreamerInfo()) ) {
          if (errmsg) {
             *errmsg += "compilation failed";
@@ -198,7 +196,7 @@ Bool_t TSchemaRuleSet::AddRule( TSchemaRule* rule, EConsistencyCheck checkConsis
    else
       fRemainingRules->Add( rule );
    fAllRules->Add( rule );
-   fRulesHash->Add( rule );
+//   fRulesHash->Add( rule );
 
    return kTRUE;
 }
